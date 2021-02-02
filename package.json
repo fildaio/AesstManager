@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fildaio/AesstManager.git"
+    "url": "git+https://github.com/fildaio/AssetManager.git"
   },
   "keywords": [
     "handler"
@@ -19,9 +19,9 @@
   "author": "filda.io",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fildaio/AesstManager/issues"
+    "url": "https://github.com/fildaio/AssetManager/issues"
   },
-  "homepage": "https://github.com/fildaio/AesstManager#readme",
+  "homepage": "https://github.com/fildaio/AssetManager#readme",
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
     "@openzeppelin/upgrades": "^2.8.0",
