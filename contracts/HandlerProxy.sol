@@ -2,15 +2,15 @@
 pragma solidity >=0.4.22 <0.8.0;
 
 import "@openzeppelin/upgrades/contracts/upgradeability/BaseUpgradeabilityProxy.sol";
-import "@openzeppelin/upgrades/contracts/ownership/Ownable.sol";
+import "./Governable.sol";
 
-contract HandlerProxy is BaseUpgradeabilityProxy, OpenZeppelinUpgradesOwnable {
+contract HandlerProxy is BaseUpgradeabilityProxy, Governable {
 
-  constructor(address _implementation) public {
+  constructor(address _implementation, address _governance) public Governable(_governance) {
     _setImplementation(_implementation);
   }
 
-  function upgrade(address newImplementation) external onlyOwner {
+  function upgrade(address newImplementation) external onlyGovernance {
     _upgradeTo(newImplementation);
   }
 

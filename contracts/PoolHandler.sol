@@ -2,6 +2,7 @@
 pragma solidity >=0.4.22 <0.8.0;
 
 import "./DistributionRecipient.sol";
+import "./dependence.sol";
 
 interface NoMintRewardPool {
     function periodFinish() external returns (uint256);
@@ -65,7 +66,7 @@ contract PoolHandler is DistributionRecipient {
         return rowToDelete;
     }
 
-    function notifyPoolStart(address poolAddr) external onlyDistribution {
+    function notifyPoolStart(address poolAddr) external onlyRewardDistribution {
         require(exist(poolAddr), "pool not exist!");
         NoMintRewardPool pool = NoMintRewardPool(poolAddr);
         require(block.timestamp > pool.periodFinish(), "pool not finished!");
@@ -88,7 +89,7 @@ contract PoolHandler is DistributionRecipient {
         return IERC20(_token).balanceOf(address(this));
     }
 
-    function notifyPoolByBalance(address poolAddr) external onlyDistribution {
+    function notifyPoolByBalance(address poolAddr) external onlyRewardDistribution {
         require(exist(poolAddr), "pool not exist!");
         NoMintRewardPool pool = NoMintRewardPool(poolAddr);
         require(block.timestamp > pool.periodFinish(), "pool not finished!");
@@ -101,5 +102,6 @@ contract PoolHandler is DistributionRecipient {
         token.safeTransfer(poolAddr, balance);
         pool.notifyRewardAmount(balance);
     }
+
 }
 

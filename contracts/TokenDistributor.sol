@@ -2,6 +2,7 @@
 pragma solidity >=0.4.22 <0.8.0;
 
 import "./DistributionRecipient.sol";
+import "./dependence.sol";
 
 contract TokenDistributor is DistributionRecipient {
     using SafeERC20 for IERC20;
@@ -86,7 +87,7 @@ contract TokenDistributor is DistributionRecipient {
         halfHeight = height;
     }
 
-    function pushToken() external onlyDistribution {
+    function pushToken() external onlyRewardDistribution {
         require(block.number > lastUpdateHeight, "not start");
 
         for (uint i = 0; i < recipientList.length; i++) {
@@ -104,5 +105,4 @@ contract TokenDistributor is DistributionRecipient {
 
         lastUpdateHeight = block.number;
     }
-
 }
