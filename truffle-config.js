@@ -89,7 +89,17 @@ module.exports = {
       skipDryRun: true,
       networkCheckTimeout: 100000000,
       websockets: true
-    }
+    },
+    esc: {
+        provider: () => new HDWalletProvider(mnemonicStr, `https://api.elastos.io/eth`),
+        network_id: "20",
+        chain_id: "20",
+        timeoutBlocks: 300,
+        // confirmations: 2,
+        gasPrice: 1100000000,
+        skipDryRun: false,
+        networkCheckTimeout: 600000000
+    },
   },
 
   // Set default mocha options here, use special reporters etc.

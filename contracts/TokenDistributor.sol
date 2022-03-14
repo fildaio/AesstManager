@@ -17,17 +17,22 @@ contract TokenDistributor is DistributionRecipient {
     address[] public recipientList;
 
     IERC20 public token;
+    uint256 public rewardIndex;
     uint256 public lastUpdateHeight;
-    uint256 public halfHeight;
-    uint256 public constant rewardPerBlock = 1.25 * 1e18;
-    uint256 public constant rewardHalfPerBlock = 0.6 * 1e18;
+    uint256[] public rewardHeightArray;
+    uint256[] public rewardPerBlockArray;
 
-    function initialize(address _distribution, address _token, uint256 _startHeight, uint256 _halfHeight) public initializer {
-        require(_token != address(0), "please check parameters");
+    function initialize(address _distribution,
+        address _token,
+        uint256[] memory _rewardHeightArray,
+        uint256[] memory _rewardPerBlockArray) public initializer {
+        require(_token != address(0) && _rewardHeightArray.length == _rewardPerBlockArray.length, "please check parameters");
+
         DistributionRecipient.initialize(_distribution);
         token = IERC20(_token);
-        lastUpdateHeight = _startHeight;
-        halfHeight = _halfHeight;
+        lastUpdateHeight = _rewardHeightArray[0];
+        rewardHeightArray = _rewardHeightArray;
+        rewardPerBlockArray = _rewardPerBlockArray;
     }
 
     function exist(address recipient) public view returns (bool) {
@@ -83,24 +88,32 @@ contract TokenDistributor is DistributionRecipient {
         return amount;
     }
 
-    function setHalfHeight(uint256 height) external onlyOwner {
-        halfHeight = height;
+    function setReward(uint _index, uint256 _height, uint _rewardPerBlock) external onlyOwner {
+        require(_index < rewardHeightArray.length, "index invalid");
+        require(_height > lastUpdateHeight, "too early");
+        rewardHeightArray[_index] = _height;
+        rewardPerBlockArray[_index] = _rewardPerBlock;
     }
+
 
     function pushToken() external onlyRewardDistribution {
         require(block.number > lastUpdateHeight, "not start");
 
+        uint next = rewardIndex + 1 >= rewardHeightArray.length ? rewardIndex : rewardIndex + 1;
         for (uint i = 0; i < recipientList.length; i++) {
             uint256 amount = recipientEntities[recipientList[i]].proportion;
-            if (halfHeight >= block.number) {
-                amount = amount.mul(block.number.sub(lastUpdateHeight).mul(rewardPerBlock)).div(1e18);
-            } else if (block.number > halfHeight && lastUpdateHeight < halfHeight) {
-                amount = amount.mul(block.number.sub(halfHeight).mul(rewardHalfPerBlock).add(halfHeight.sub(lastUpdateHeight).mul(rewardPerBlock))).div(1e18);
+            if (rewardHeightArray[next] >= block.number || lastUpdateHeight > rewardHeightArray[next]) {
+                amount = amount.mul(block.number.sub(lastUpdateHeight).mul(rewardPerBlockArray[rewardIndex])).div(1e18);
             } else {
-                amount = amount.mul(block.number.sub(lastUpdateHeight).mul(rewardHalfPerBlock)).div(1e18);
+                amount = amount.mul(block.number.sub(rewardHeightArray[next]).mul(rewardPerBlockArray[next])
+                    .add(rewardHeightArray[next].sub(lastUpdateHeight).mul(rewardPerBlockArray[rewardIndex]))).div(1e18);
             }
 
             token.safeTransfer(recipientList[i], amount);
+        }
+
+        if (rewardHeightArray[next] < block.number && rewardIndex < rewardHeightArray.length) {
+            rewardIndex++;
         }
 
         lastUpdateHeight = block.number;
