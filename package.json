@@ -23,8 +23,8 @@
   },
   "homepage": "https://github.com/fildaio/AssetManager#readme",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.3.0",
+    "@openzeppelin/contracts": "^3.4.2",
     "@openzeppelin/upgrades": "^2.8.0",
-    "@truffle/hdwallet-provider": "^1.2.1"
+    "@truffle/hdwallet-provider": "^1.6.0"
   }
 }
