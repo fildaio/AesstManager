@@ -17,7 +17,6 @@ contract TokenDistributor is DistributionRecipient {
     address[] public recipientList;
 
     IERC20 public token;
-    uint256 public rewardIndex;
     uint256 public lastUpdateHeight;
     uint256[] public rewardHeightArray;
     uint256[] public rewardPerBlockArray;
@@ -88,34 +87,49 @@ contract TokenDistributor is DistributionRecipient {
         return amount;
     }
 
-    function setReward(uint _index, uint256 _height, uint _rewardPerBlock) external onlyOwner {
-        require(_index < rewardHeightArray.length, "index invalid");
-        require(_height > lastUpdateHeight, "too early");
-        rewardHeightArray[_index] = _height;
-        rewardPerBlockArray[_index] = _rewardPerBlock;
+    function setReward(uint256[] calldata _rewardHeightArray, uint256[] calldata _rewardPerBlockArray) external onlyOwner {
+        require(_rewardHeightArray.length == _rewardPerBlockArray.length, "please check parameters");
+        rewardHeightArray = _rewardHeightArray;
+        rewardPerBlockArray = _rewardPerBlockArray;
     }
 
 
     function pushToken() external onlyRewardDistribution {
-        require(block.number > lastUpdateHeight, "not start");
+        require(block.number > lastUpdateHeight && recipientList.length > 0, "not start");
 
-        uint next = rewardIndex + 1 >= rewardHeightArray.length ? rewardIndex : rewardIndex + 1;
-        for (uint i = 0; i < recipientList.length; i++) {
-            uint256 amount = recipientEntities[recipientList[i]].proportion;
-            if (rewardHeightArray[next] >= block.number || lastUpdateHeight > rewardHeightArray[next]) {
-                amount = amount.mul(block.number.sub(lastUpdateHeight).mul(rewardPerBlockArray[rewardIndex])).div(1e18);
+        uint last = findIndex(lastUpdateHeight);
+        uint current = findIndex(block.number);
+        uint256 totalAmount = 0;
+
+        while (last <= current) {
+            if (last == current) {
+                totalAmount = totalAmount.add(block.number.sub(lastUpdateHeight).mul(rewardPerBlockArray[last]));
             } else {
-                amount = amount.mul(block.number.sub(rewardHeightArray[next]).mul(rewardPerBlockArray[next])
-                    .add(rewardHeightArray[next].sub(lastUpdateHeight).mul(rewardPerBlockArray[rewardIndex]))).div(1e18);
+                totalAmount = totalAmount.add(rewardHeightArray[last + 1].sub(lastUpdateHeight).mul(rewardPerBlockArray[last]));
+                lastUpdateHeight = rewardHeightArray[last + 1];
             }
 
-            token.safeTransfer(recipientList[i], amount);
+            last++;
         }
 
-        if (rewardHeightArray[next] < block.number && rewardIndex < rewardHeightArray.length) {
-            rewardIndex++;
+        if (totalAmount > 0) {
+            for (uint i = 0; i < recipientList.length; i++) {
+                token.safeTransfer(recipientList[i], recipientEntities[recipientList[i]].proportion.mul(totalAmount).div(1e18));
+            }
         }
 
         lastUpdateHeight = block.number;
+    }
+
+    function findIndex(uint256 blockNumber) internal view returns(uint256) {
+        for (uint i = 0; i < rewardHeightArray.length; i++) {
+            if (i != rewardHeightArray.length - 1
+                && blockNumber >= rewardHeightArray[i]
+                && blockNumber < rewardHeightArray[i+1]) {
+                return i;
+            } else if (i == rewardHeightArray.length - 1 && blockNumber >= rewardHeightArray[i]) {
+                return i;
+            }
+        }
     }
 }
